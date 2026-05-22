@@ -185,23 +185,23 @@ class Dashboard:
         # top3 卡片占 (1,1)
         top3_wrap = tk.Frame(grid, bg=PURPLE)
         top3_wrap.grid(row=1, column=1, padx=3, pady=3, sticky='nsew')
-        top3_cell = tk.Frame(top3_wrap, bg=BG2, padx=6, pady=3)
+        top3_cell = tk.Frame(top3_wrap, bg=BG2, padx=6, pady=2)
         top3_cell.pack(fill='both', expand=True, padx=(2, 0))
         top3_cell.columnconfigure(1, weight=1)
         self._top3_title = tk.Label(top3_cell, text='本月模型 TOP 3', bg=BG2, fg=GRAY,
                                      font=('Segoe UI', 7), anchor='w')
-        self._top3_title.grid(row=0, column=0, columnspan=3, sticky='w', pady=(0, 1))
+        self._top3_title.grid(row=0, column=0, columnspan=3, sticky='w', pady=(0, 0))
         self._top3_lbls = []
         medals = ['①', '②', '③']
         for i in range(3):
             tk.Label(top3_cell, text=medals[i], bg=BG2, fg=GRAY,
-                     font=('Segoe UI', 7)).grid(row=i + 1, column=0, sticky='w')
+                     font=('Segoe UI', 7)).grid(row=i + 1, column=0, sticky='w', pady=0)
             name_lbl = tk.Label(top3_cell, text='——', bg=BG2, fg=GRAY,
                                 font=('Segoe UI', 7), anchor='w')
-            name_lbl.grid(row=i + 1, column=1, sticky='w', padx=(2, 0))
+            name_lbl.grid(row=i + 1, column=1, sticky='w', padx=(2, 0), pady=0)
             cost_lbl = tk.Label(top3_cell, text='', bg=BG2, fg=GRAY,
                                 font=('Consolas', 7), anchor='e')
-            cost_lbl.grid(row=i + 1, column=2, sticky='e')
+            cost_lbl.grid(row=i + 1, column=2, sticky='e', pady=0)
             self._top3_lbls.append((name_lbl, cost_lbl))
 
         # 充值按钮占 (1,2)
