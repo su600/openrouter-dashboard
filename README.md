@@ -1,5 +1,5 @@
 # OpenRouter Dashboard
-
+- by Claude Sonnet 4.6 & Gemini3.5 Flash
 一个运行在 Windows 桌面上的 OpenRouter 用量监控悬浮窗。
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
