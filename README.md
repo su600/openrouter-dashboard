@@ -88,6 +88,3 @@ pip install pyinstaller
 pyinstaller --onefile --windowed --name OpenRouter-Dashboard main.py
 ```
 
-## License
-
-MIT
