@@ -60,7 +60,7 @@ class Dashboard:
         self._cny_mode = self.cfg.get('cny_mode', False)
         self._W_full = 370
         self._W_slim = 248
-        self._H = 175
+        self._H = 187
         W = self._W_full if self._col_expanded else self._W_slim
         sw = self.root.winfo_screenwidth()
         sh = self.root.winfo_screenheight()
@@ -172,6 +172,15 @@ class Dashboard:
             self._vals[key] = v
             if col == 2:
                 self._col2_cells.append(wrap)
+            if key == 'monthly':
+                self._monthly_pct = tk.Label(cell, text='', bg=BG2, fg=GRAY,
+                                             font=('Segoe UI', 7), anchor='w')
+                self._monthly_pct.pack(anchor='w')
+                bar_bg = tk.Frame(cell, bg=BG3, height=3)
+                bar_bg.pack(fill='x', pady=(2, 0))
+                bar_bg.pack_propagate(False)
+                self._monthly_bar = tk.Frame(bar_bg, bg=CYAN, height=3)
+                self._monthly_bar.place(x=0, y=0, relheight=1.0, relwidth=0)
 
         # top3 卡片占 (1,1)
         top3_wrap = tk.Frame(grid, bg=PURPLE)
@@ -504,6 +513,19 @@ class Dashboard:
 
         # monthly
         self._vals['monthly'].config(text=self._fmt(data['usage_monthly']), fg=WHITE)
+        limit     = data.get('limit')
+        limit_rem = data.get('limit_rem')
+        if limit and limit > 0 and limit_rem is not None:
+            used = limit - limit_rem
+            pct  = used / limit * 100
+            pct_color = RED if pct >= 90 else YELLOW if pct >= 70 else CYAN
+            self._monthly_pct.config(
+                text=f'{pct:.1f}%  限额 {self._fmt2(limit)}', fg=pct_color)
+            self._monthly_bar.config(bg=pct_color)
+            self._monthly_bar.place(relwidth=min(pct / 100, 1.0))
+        else:
+            self._monthly_pct.config(text='无额度限制', fg=GRAY)
+            self._monthly_bar.place(relwidth=0)
 
         # total cumulative
         total = data['usage']
