@@ -218,6 +218,15 @@ class Dashboard:
         topup_btn.bind('<Button-1>', lambda _: self._open_topup())
         topup_btn.bind('<Enter>',    lambda _: topup_btn.config(bg='#388bfd'))
         topup_btn.bind('<Leave>',    lambda _: topup_btn.config(bg=ACCENT))
+
+        detail_btn = tk.Label(topup_cell, text='📊 本月明细', bg=BG3, fg=CYAN,
+                              font=('Segoe UI', 8), cursor='hand2',
+                              padx=6, pady=1, relief='flat')
+        detail_btn.pack(anchor='w', pady=(3, 0))
+        detail_btn.bind('<Button-1>', lambda _: self._open_daily_popup())
+        detail_btn.bind('<Enter>',    lambda _: detail_btn.config(fg=WHITE))
+        detail_btn.bind('<Leave>',    lambda _: detail_btn.config(fg=CYAN))
+
         self._col2_cells.append(wrap2)
 
         self._grid = grid
@@ -362,6 +371,109 @@ class Dashboard:
                   font=('Segoe UI', 9, 'bold'), cursor='hand2',
                   command=_save).pack(fill='x', padx=14, pady=10, ipady=4)
 
+    def _open_daily_popup(self):
+        bd = getattr(self, '_daily_breakdown', {})
+        no_mgmt = not self.cfg.get('mgmt_key', '').strip()
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title('本月每日用量')
+        dlg.configure(bg=BG2)
+        dlg.resizable(False, False)
+        dlg.attributes('-topmost', True)
+        dlg.grab_set()
+        dlg.geometry(f'380x320+{self.root.winfo_x()-10}+{self.root.winfo_y()+32}')
+
+        # header
+        hdr = tk.Frame(dlg, bg=ACCENT, height=28)
+        hdr.pack(fill='x')
+        hdr.pack_propagate(False)
+        tk.Label(hdr, text='📊 本月每日用量',
+                 bg=ACCENT, fg=WHITE, font=('Segoe UI', 10, 'bold')).pack(side='left', padx=10)
+        tk.Label(hdr, text='✕', bg=ACCENT, fg=WHITE,
+                 font=('Segoe UI', 9), cursor='hand2', padx=8
+                 ).pack(side='right').bind('<Button-1>', lambda _: dlg.destroy())
+
+        if no_mgmt or not bd:
+            msg = '请在设置中填写「管理 Key」后刷新数据' if no_mgmt else '暂无本月活动数据'
+            tk.Label(dlg, text=msg, bg=BG2, fg=GRAY,
+                     font=('Segoe UI', 9)).pack(expand=True)
+            return
+
+        rate = float(self.cfg.get('cny_rate', 7))
+
+        # column headers
+        col_frame = tk.Frame(dlg, bg=BG3, padx=8, pady=4)
+        col_frame.pack(fill='x')
+        for txt, w, anchor in [('日期', 90, 'w'), ('Token 用量', 110, 'e'),
+                                ('费用', 80, 'e'), ('占比', 60, 'e')]:
+            tk.Label(col_frame, text=txt, bg=BG3, fg=GRAY,
+                     font=('Segoe UI', 8, 'bold'),
+                     width=w // 8, anchor=anchor).pack(side='left')
+
+        # scrollable rows
+        outer = tk.Frame(dlg, bg=BG2)
+        outer.pack(fill='both', expand=True, padx=2)
+        canvas = tk.Canvas(outer, bg=BG2, highlightthickness=0)
+        sb = tk.Scrollbar(outer, orient='vertical', command=canvas.yview,
+                          bg=BG3, troughcolor=BG2, width=8)
+        canvas.configure(yscrollcommand=sb.set)
+        sb.pack(side='right', fill='y')
+        canvas.pack(side='left', fill='both', expand=True)
+        inner = tk.Frame(canvas, bg=BG2)
+        canvas.create_window((0, 0), window=inner, anchor='nw')
+        inner.bind('<Configure>', lambda e: canvas.configure(
+            scrollregion=canvas.bbox('all')))
+        canvas.bind('<MouseWheel>', lambda e: canvas.yview_scroll(
+            int(-1 * (e.delta / 120)), 'units'))
+
+        days = sorted(bd.keys(), reverse=True)
+        total_cost = sum(v['cost'] for v in bd.values()) or 1
+
+        for i, day in enumerate(days):
+            row_bg = BG3 if i % 2 == 0 else BG2
+            row = tk.Frame(inner, bg=row_bg, padx=8, pady=3)
+            row.pack(fill='x')
+
+            cost   = bd[day]['cost']
+            tokens = bd[day]['tokens']
+            pct    = cost / total_cost * 100
+            cost_str = f'¥{cost * rate:.3f}' if self._cny_mode else f'${cost:.5f}'
+            tok_str  = f'{tokens:,}' if tokens else '—'
+            bar_pct  = pct / 100
+
+            # date
+            tk.Label(row, text=day, bg=row_bg, fg=WHITE,
+                     font=('Consolas', 8), width=11, anchor='w').pack(side='left')
+            # tokens
+            tk.Label(row, text=tok_str, bg=row_bg, fg=GRAY,
+                     font=('Consolas', 8), width=13, anchor='e').pack(side='left')
+            # cost
+            cost_color = RED if cost > 1 else YELLOW if cost > 0.1 else WHITE
+            tk.Label(row, text=cost_str, bg=row_bg, fg=cost_color,
+                     font=('Consolas', 8), width=10, anchor='e').pack(side='left')
+            # mini bar + pct
+            bar_wrap = tk.Frame(row, bg=row_bg)
+            bar_wrap.pack(side='left', fill='x', expand=True, padx=(6, 0))
+            bar_track = tk.Frame(bar_wrap, bg=BG3, height=6)
+            bar_track.pack(fill='x', pady=(4, 0))
+            bar_track.update_idletasks()
+            fill_color = RED if pct > 30 else YELLOW if pct > 10 else CYAN
+            tk.Frame(bar_track, bg=fill_color, height=6,
+                     width=max(2, int(bar_pct * 100))).place(x=0, y=0, relheight=1.0,
+                                                              relwidth=bar_pct)
+            tk.Label(row, text=f'{pct:.1f}%', bg=row_bg, fg=GRAY,
+                     font=('Segoe UI', 7), width=5, anchor='e').pack(side='right')
+
+        # footer summary
+        total_tok = sum(v['tokens'] for v in bd.values())
+        total_cost_real = sum(v['cost'] for v in bd.values())
+        cost_total_str = f'¥{total_cost_real * rate:.3f}' if self._cny_mode \
+            else f'${total_cost_real:.5f}'
+        foot = tk.Frame(dlg, bg=BG3, padx=8, pady=4)
+        foot.pack(fill='x')
+        tk.Label(foot, text=f'本月合计：{total_tok:,} tokens  /  {cost_total_str}',
+                 bg=BG3, fg=WHITE, font=('Segoe UI', 8)).pack(side='left')
+
     def _open_topup(self):
         import webbrowser
         webbrowser.open('https://openrouter.ai/settings/credits')
@@ -429,9 +541,10 @@ class Dashboard:
                 if attempt < 2:
                     time.sleep(2)
 
-        # model top3 — requires management key
+        # model top3 + daily breakdown — requires management key
         top3 = []
         top3_latest = ''
+        daily_breakdown = {}
         mgmt_key = self.cfg.get('mgmt_key', '').strip()
         if mgmt_key:
             date_min = datetime.now().strftime('%Y-%m-01')
@@ -446,17 +559,27 @@ class Dashboard:
                     if rg.status_code == 200:
                         month_prefix = datetime.now().strftime('%Y-%m')
                         model_cost: dict = {}
+                        daily_breakdown: dict = {}
                         latest_date = ''
                         for g in rg.json().get('data', []):
                             gdate = g.get('date', '')
                             if not gdate.startswith(month_prefix):
                                 continue
-                            if gdate[:10] > latest_date:
-                                latest_date = gdate[:10]
+                            day = gdate[:10]
+                            if day > latest_date:
+                                latest_date = day
                             model = g.get('model', '')
                             cost  = float(g.get('usage', 0) or 0)
+                            tok_in  = int(g.get('tokens_prompt',     0) or
+                                         g.get('native_tokens_prompt', 0) or 0)
+                            tok_out = int(g.get('tokens_completion',     0) or
+                                         g.get('native_tokens_completion', 0) or 0)
                             if model:
                                 model_cost[model] = model_cost.get(model, 0) + cost
+                            if day not in daily_breakdown:
+                                daily_breakdown[day] = {'cost': 0.0, 'tokens': 0}
+                            daily_breakdown[day]['cost']   += cost
+                            daily_breakdown[day]['tokens'] += tok_in + tok_out
                         top3 = sorted(model_cost.items(), key=lambda x: x[1], reverse=True)[:3]
                         top3_latest = latest_date
                     break
@@ -475,6 +598,7 @@ class Dashboard:
             'label':         d.get('label', ''),
             'top3':              top3,
             'top3_latest_date':  top3_latest,
+            'daily_breakdown':   daily_breakdown,
         }
 
     # ── UI update ─────────────────────────────────────────────────────────────
@@ -493,6 +617,7 @@ class Dashboard:
             self._dot.config(fg=RED);    self._status.config(text='网络错误', fg=RED)
             self._time_lbl.config(text=f'更新: {now}'); return
 
+        self._daily_breakdown = data.get('daily_breakdown', {})
         self._dot.config(fg=GREEN)
         self._status.config(text='已连接', fg=GREEN)
 
