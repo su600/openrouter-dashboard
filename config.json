@@ -1,14 +1,14 @@
 {
   "api_key": "",
   "refresh_sec": 60,
-  "x": null,
-  "y": null,
+  "x": 794,
+  "y": 0,
   "alpha": 0.93,
   "extra_keys": [],
   "pinned": true,
   "col_expanded": false,
-  "cny_mode": false,
+  "cny_mode": true,
   "cny_rate": 7.0,
   "mgmt_key": "",
-  "island_state": "island"
+  "island_state": "expanded"
 }
