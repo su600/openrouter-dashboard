@@ -20,9 +20,13 @@
 
 ## 截图
 
-> 胶囊状态（灵动岛）
->
-> 展开状态（完整看板）
+**胶囊状态（灵动岛）**
+
+![island](screenshots/island.png)
+
+**展开状态（完整看板）**
+
+![expanded](screenshots/expanded.png)
 
 ## 快速开始
 
