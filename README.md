@@ -1,6 +1,6 @@
 # OpenRouter Dashboard
 
-一个运行在 Windows 桌面上的 OpenRouter 用量监控悬浮窗，灵感来自 iPhone 灵动岛。
+一个运行在 Windows 桌面上的 OpenRouter 用量监控悬浮窗。
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey)
